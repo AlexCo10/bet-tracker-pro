@@ -23,7 +23,7 @@ interface Bet {
   id: string;
   amount: number;
   odds: number;
-  status: string;
+  status: "won" | "lost" | "open";
   description: string | null;
   profit: number | null;
   bet_date: string;
@@ -103,6 +103,30 @@ const History = () => {
         variant: "destructive",
         title: "Error",
         description: "Error al cargar el historial",
+      });
+    }
+  };
+
+  const updateBetStatus = async (betId: string, newStatus: "won" | "lost" | "open") => {
+    try {
+      const { error } = await supabase
+        .from("bets")
+        .update({ status: newStatus })
+        .eq("id", betId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Estado actualizado",
+        description: "El estado de la apuesta se actualizó correctamente",
+      });
+
+      fetchBets();
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Error al actualizar el estado",
       });
     }
   };
@@ -203,7 +227,7 @@ const History = () => {
                       key={bet.id}
                       className="border rounded-lg p-4 hover:bg-muted/50 transition-colors"
                     >
-                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                      <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
                             {getStatusBadge(bet.status)}
@@ -214,9 +238,21 @@ const History = () => {
                               • Cuota: {bet.odds.toFixed(2)}
                             </span>
                           </div>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-sm text-muted-foreground mb-2">
                             {bet.description || "Sin descripción"}
                           </p>
+                          <div className="w-full sm:w-48">
+                            <Select value={bet.status} onValueChange={(value) => updateBetStatus(bet.id, value as "won" | "lost" | "open")}>
+                              <SelectTrigger className="h-8">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="open">Abierta</SelectItem>
+                                <SelectItem value="won">Ganada</SelectItem>
+                                <SelectItem value="lost">Perdida</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
                         </div>
 
                         <div className="flex flex-col sm:items-end gap-1">
